@@ -51,14 +51,24 @@ class Perceptron:
     def __init__(self, inputs: list[InputData], b: float):
         self.inputs = inputs
         self.b = b
-        self.z = self.forward()
-        self.a = self.activation()
+        #inicializar z y a a 0.0. Se calcularan cuando se llame a run()
+        self.z = 0.0
+        self.a = 0.0
         
     def forward(self):
-        z = 0
-        for input in self.inputs:
-            z = z + (input.x * input.w)
-        return z + self.b
+        z_sum = 0.0 #Usar z_sum para evitar confusion con self.z 
+        for input_data_obj in self.inputs: #Renombrar 'input' para evitar conflicto con la palabra clave 'input' 
+            z_sum += (input_data_obj.x * input_data_obj.w)
+        return z_sum + self.b
     
     def activation(self):
+        #asegurarse de que self.z tenga un valor antes de usarlo 
         return 1.0 / (1.0 + np.exp(-self.z))
+
+    def run(self):
+        self.z = self.forward()        # Calcula la suma ponderada
+        self.a = self.activation()     # Aplica la función de activación
+
+    # Agregamos un método output() para obtener 'a' más limpiamente, aunque p.a también funciona.
+    def output(self) -> float:
+        return self.a

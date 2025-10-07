@@ -1,69 +1,96 @@
 # ============================================================
-# Politécnica de Santa Rosa
+# Universidad Politécnica de Santa Rosa Jáuregui
 #
 # Materia: Redes Neuronales
 # Profesor: Jesús Salvador López Ortega
 # Grupo: IRC03
 # Archivo: backpropagation.py
-# Descripción: Definición del algoritmo de retropropagación (backpropagation) de una red neuronal.
+# Descripción: Implementación del algoritmo de aprendizaje mediante retropropagación.
 # ============================================================
+
 import sys, os, random
 import numpy as np
-from perceptron import InputData, Perceptron
+from perceptron.input_data import InputData
+from perceptron.perceptron import Perceptron
+
 #############################################################################################################################
-# Algoritmo de retropropagación (backpropagation) en una red neuronal lineal                                                #
+# Algoritmo de retropropagación (backpropagation) aplicado a una red neuronal lineal.                                       #
 #                                                                                                                           #
-# Objetivo: Implementar el cálculo de los gradientes y la actualización de pesos en función del error de salida.            #
+# Propósito: Ajustar los pesos de la red en función del error entre la salida obtenida y la esperada.                       #
 #                                                                                                                           #
-# Consideraciones:                                                                                                          #
-# - La red ya ha realizado la propagación hacia adelante y ha generado un "network_output".                                 #
-# - Se conoce el valor esperado ("expected_output") para esa entrada.                                                       #
-# - Se deben calcular los errores hacia atrás desde la neurona de salida hasta las capas ocultas.                           #
-#                                                                                                                           #
-# El flujo esperado del algoritmo es:                                                                                       #
-#                                                                                                                           #
-# 1. Calcular el error en la neurona de salida:                                                                             #
-#    error_salida = expected_output - network_output                                                                        #
-#                                                                                                                           #
-# 2. Calcular el gradiente de la neurona de salida:                                                                         #
-#    delta_salida = error_salida * derivada_de_la_función_de_activación                                                     #
-#                                                                                                                           #
-# 3. Para cada capa oculta (en orden inverso):                                                                              #
-#    3.1. Calcular el error de cada neurona como la suma ponderada de los deltas de la capa siguiente.                      #
-#    3.2. Calcular el delta de cada neurona usando la derivada de su función de activación.                                 #
-#                                                                                                                           #
-# 4. Actualizar los pesos de cada conexión:                                                                                 #
-#    nuevo_peso = peso_actual + tasa_de_aprendizaje * delta * entrada_correspondiente                                       #
-#                                                                                                                           #
-# 5. Repetir el proceso para cada muestra del conjunto de entrenamiento.                                                    #
-#                                                                                                                           #
-# NOTA: Este algoritmo permite que la red aprenda ajustando sus pesos para minimizar el error de salida.                    #
-#       Se recomienda modularizar el código y documentar cada paso con ejemplos y analogías.                                #
+# Flujo general:                                                                                                            #
+# 1. Se calcula el error de la salida.                                                                                      #
+# 2. Se obtiene el gradiente (delta) de la neurona de salida.                                                               #
+# 3. Se propaga el error hacia las capas previas (ocultas).                                                                 #
+# 4. Se actualizan los pesos y sesgos usando una tasa de aprendizaje.                                                       #
+# 5. Se repite el proceso para todas las muestras de entrenamiento.                                                         #
 #############################################################################################################################
 
-# Ejercicio
-# TODO: Define una funcion "backpropagation_network" que implemente una red
-#       neuronal de propagación lineal con retropropagación, considera las clases "InputData" y "Perceptron"
-#       definidas en el paquete "perpetron".
-# 
-#       Los parámetros de la función deben ser los siguientes:
-#       - inputs (list): entradas que tendrá la red
-#       - perceptrons (int): número de neuronas que tendrá cada capa de la red
-#       - layers (int): número de capas que tendrá la red
-#
-#       Las salidas de la función deben ser las siguientes: 
-#       - network_output (float): cálculo de "a" de la capa de salida.
-#
-# Ejemplo de uso:
-#   inputs = np.array([0.5, 0.8, 0.2])
-#   perceptrons = 4
-#   layers = 3
-#   output = backpropagation_network(inputs, perceptrons, layers)
-def backpropagation_network(inputs:np.ndarray, perceptrons:int, layers:int) -> float:
-    # Mensaje para identificar que entramos exitosamente a la función
-    print("corriendo red de retropropagación con los siguientes parámetros:\n- entradas: {inputs}\n- perceptrones por capa: {perceptrons}\n- capas: {layers}\n".format(inputs=inputs, perceptrons=perceptrons, layers=layers))
-    # Escribe tu código aquí
-    network_output = 0.0
+def backpropagation_network(inputs: np.ndarray, perceptrons: int, layers: int) -> float:
+    """
+    Ejecuta una red neuronal de propagación lineal con ajuste de pesos mediante backpropagation.
+    """
 
-    # Return de la función: cálculo de "a" de la capa de salida
-    return float(network_output)
+    # --- Inicialización de datos base ---
+    entradas = [float(valor) for valor in inputs]
+    lr = 0.1  # tasa de aprendizaje
+
+    # Determinar salida esperada (simulación de lógica OR)
+    salida_deseada = 1.0 if any(v > 0 for v in entradas) else 0.0
+
+    # --- 1. Construcción de la red (propagación hacia adelante) ---
+    capa_actual = entradas
+    red_completa = []
+
+    for _ in range(layers):
+        capa_salida = []
+        capa_neuronas = []
+        for _ in range(perceptrons):
+            datos_neurona = [InputData(x=valor) for valor in capa_actual]
+            neurona = Perceptron(inputs=datos_neurona, b=np.random.randn() * 0.01)
+            neurona.run()
+            capa_salida.append(neurona.a)
+            capa_neuronas.append(neurona)
+        red_completa.append(capa_neuronas)
+        capa_actual = capa_salida
+
+    # Capa de salida
+    datos_salida = [InputData(x=valor) for valor in capa_actual]
+    salida_neurona = Perceptron(inputs=datos_salida, b=np.random.randn() * 0.01)
+    salida_neurona.run()
+
+    # --- 2. Calcular el error y delta de salida ---
+    error = salida_deseada - salida_neurona.a
+    delta_salida = error * (salida_neurona.a * (1 - salida_neurona.a))
+
+    # --- 3. Actualizar pesos y sesgo de la neurona de salida ---
+    for dato in salida_neurona.inputs:
+        dato.w += lr * delta_salida * dato.x
+    salida_neurona.b += lr * delta_salida
+
+    # --- 4. Retropropagación a la capa anterior ---
+    if red_completa:
+        ultima_capa = red_completa[-1]
+        for idx, neurona in enumerate(ultima_capa):
+            delta_oculta = neurona.a * (1 - neurona.a) * salida_neurona.inputs[idx].w * delta_salida
+            for dato in neurona.inputs:
+                dato.w += lr * delta_oculta * dato.x
+            neurona.b += lr * delta_oculta
+
+    # --- 5. Nueva propagación hacia adelante con pesos actualizados ---
+    valores_actuales = [float(v) for v in entradas]
+    for capa in red_completa:
+        salida_capa = []
+        for neurona in capa:
+            for j, dato in enumerate(neurona.inputs):
+                dato.x = valores_actuales[j]
+            neurona.run()
+            salida_capa.append(neurona.a)
+        valores_actuales = salida_capa
+
+    for j, dato in enumerate(salida_neurona.inputs):
+        dato.x = valores_actuales[j]
+    salida_neurona.run()
+
+    # --- 6. Retornar salida final actualizada ---
+    return float(salida_neurona.a)
