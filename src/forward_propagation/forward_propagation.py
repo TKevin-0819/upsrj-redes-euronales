@@ -60,6 +60,6 @@ def forward_propagation_network(inputs: np.ndarray, perceptrons: int, layers: in
     datos_finales = [InputData(x=v) for v in valores_actuales]
     neurona_salida = Perceptron(inputs=datos_finales, b=np.random.randn() * 0.01)
     neurona_salida.run()
-
+ 
     # Retornar el resultado final de la red
     return float(neurona_salida.a)
